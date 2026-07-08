@@ -93,6 +93,7 @@ class OrderController extends Controller
             'customer_id' => 'required|exists:customers,id',
             'delivery_date' => 'required|date',
             'payment_type' => 'required|string',
+            'installment_date' => 'nullable|date|required_if:payment_type,قسطی',
             'discount' => 'nullable|numeric|min:0',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
@@ -104,6 +105,7 @@ class OrderController extends Controller
             'customer_id' => $validated['customer_id'],
             'user_id' => auth()->id(),
             'delivery_date' => $validated['delivery_date'],
+            'installment_date' => $validated['installment_date'] ?? null,
             'payment_type' => $validated['payment_type'],
             'discount' => $validated['discount'] ?? 0,
             'status' => 'pending',
@@ -112,7 +114,12 @@ class OrderController extends Controller
         $customer = Customer::find($validated['customer_id']);
         $summaryText = "سفارش برای: {$customer->store_name} (آقای/خانم {$customer->contact_name})\n";
         $summaryText .= "آدرس: {$customer->address}\n";
-        $summaryText .= "تاریخ تحویل: {$validated['delivery_date']}\n\nاقلام:\n";
+        $summaryText .= "تاریخ تحویل: {$this->toJalaliDate($validated['delivery_date'], true)}\n";
+        $summaryText .= "نوع پرداخت: {$validated['payment_type']}\n";
+        if (!empty($validated['installment_date'])) {
+            $summaryText .= "تاریخ سررسید قسط: {$this->toJalaliDate($validated['installment_date'], true)}\n";
+        }
+        $summaryText .= "\nاقلام:\n";
 
         $totalPrice = 0; // متغیر برای محاسبه قیمت کل
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import MainLayout from "@/Layouts/MainLayout.vue";
 import JalaliDatePicker from "@/Components/JalaliDatePicker.vue";
@@ -18,6 +18,7 @@ const form = useForm({
     customer_id: "",
     delivery_date: "",
     payment_type: PAYMENT_TYPES.CASH,
+    installment_date: "",
     discount: 0,
     items: [] as Array<{
         product_id: number;
@@ -93,6 +94,16 @@ const cartTotal = computed(() => {
     );
     return Math.max(0, total - form.discount);
 });
+
+// وقتی نوع پرداخت از «قسطی» به چیز دیگه‌ای تغییر کنه، تاریخ قسط ثبت‌شده پاک میشه
+watch(
+    () => form.payment_type,
+    (newType) => {
+        if (newType !== PAYMENT_TYPES.INSTALLMENT_PLAN) {
+            form.installment_date = "";
+        }
+    },
+);
 
 // ارسال فرم به سمت بک‌اند
 const submitOrder = () => {
@@ -297,6 +308,16 @@ const submitOrder = () => {
                             {{ label }}
                         </option>
                     </select>
+                </div>
+
+                <div
+                    v-if="form.payment_type === PAYMENT_TYPES.INSTALLMENT_PLAN"
+                >
+                    <label
+                        class="block text-xs font-semibold text-slate-600 mb-1"
+                        >تاریخ سررسید قسط</label
+                    >
+                    <JalaliDatePicker v-model="form.installment_date" />
                 </div>
 
                 <div>

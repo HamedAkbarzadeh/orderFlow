@@ -1,0 +1,1 @@
+import{_ as e}from"./_plugin-vue_export-helper-DlAUqK2U.js";import{g as o,o as r}from"./app-CSsu_2pi.js";const c={};function n(t,s){return r(),o("div",null,"صفحه لیست سفارشات (در حال توسعه)")}const f=e(c,[["render",n]]);export{f as default};

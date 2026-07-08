@@ -2,6 +2,7 @@
 export const PAYMENT_TYPES = {
     CASH: 'نقدی',
     INSTALLMENT: 'امانی',
+    INSTALLMENT_PLAN: 'قسطی',
     PREPAYMENT: 'بیعانه',
     ON_DELIVERY: 'پرداخت در محل'
 } as const;
