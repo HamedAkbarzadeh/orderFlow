@@ -42,14 +42,26 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // تغییر email به phone در متد only
+        // تلاش برای لاگین با شماره موبایل و رمز عبور
         if (! Auth::attempt($this->only('phone', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'phone' => trans('auth.failed'), // تغییر email به phone
+                'phone' => trans('auth.failed'),
             ]);
         }
+
+        // ----------- اضافه شدن چک کردن وضعیت فعال بودن اکانت -----------
+        // در این مرحله نام کاربری و رمز عبور درست بوده و کاربر لاگین شده است
+        // اما اگر اکانت فعال نباشد، او را لاگ‌اوت کرده و ارور نمایش می‌دهیم
+        if (is_null(Auth::user()->activated_at)) {
+            Auth::logout(); // خروج اجباری
+
+            throw ValidationException::withMessages([
+                'phone' => 'جهت فعال شدن اکانتتون به پشتیبانی پیام دهید.',
+            ]);
+        }
+        // ------------------------------------------------------------------
 
         RateLimiter::clear($this->throttleKey());
     }
@@ -82,6 +94,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('email')) . '|' . $this->ip());
     }
 }
