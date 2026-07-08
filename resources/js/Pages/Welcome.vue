@@ -1,11 +1,31 @@
 <script setup lang="ts">
 import { Head, Link } from "@inertiajs/vue3";
-
+import { ref, onMounted } from "vue";
+import { usePage } from "@inertiajs/vue3";
+import Toast from "@/Components/ui/Toast.vue";
 // این پراپ‌ها به صورت پیش‌فرض توسط روت '/' لاراول به این صفحه پاس داده می‌شوند
 defineProps<{
     canLogin?: boolean;
     canRegister?: boolean;
 }>();
+
+const page = usePage();
+const showToast = ref(false);
+const toastMessage = ref("");
+const toastType = ref<"error" | "success" | "info" | "warning">("info");
+
+onMounted(() => {
+    // بررسی پیام فلش ارسال شده از بک‌اند
+    const flashToast = page.props.flash?.toast as any;
+    if (flashToast) {
+        toastMessage.value = flashToast.message;
+        toastType.value = flashToast.type;
+        showToast.value = true;
+        setTimeout(() => {
+            showToast.value = false;
+        }, 6000);
+    }
+});
 </script>
 
 <template>
@@ -15,6 +35,7 @@ defineProps<{
         class="relative min-h-screen flex items-center justify-center bg-slate-50 overflow-hidden"
         dir="rtl"
     >
+        <Toast :show="showToast" :message="toastMessage" :type="toastType" />
         <div
             class="absolute top-0 right-0 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"
         ></div>
@@ -85,6 +106,17 @@ defineProps<{
 
             <div class="mt-8 text-[10px] text-slate-400 font-semibold">
                 طراحی شده برای سرعت و دقت در ثبت سفارش
+            </div>
+            <div
+                class="w-full mt-4 text-center text-xs font-semibold text-slate-500 bg-slate-100/50 p-3 rounded-xl border border-slate-200"
+            >
+                جهت ارتباط با پشتیبانی به این شماره تماس حاصل کنید:<br />
+                <a
+                    href="tel:09379674614"
+                    class="text-indigo-600 font-black text-sm mt-1 inline-block"
+                    dir="ltr"
+                    >0937 967 4614</a
+                >
             </div>
         </div>
     </div>

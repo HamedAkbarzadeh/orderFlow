@@ -29,24 +29,24 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:255|unique:' . User::class, // تغییر email به phone
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:20', 'unique:users,phone'],
+            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
+        \App\Models\User::create([
             'name' => $request->name,
-            'phone' => $request->phone, // تغییر email به phone
-            'password' => Hash::make($request->password),
+            'phone' => $request->phone,
+            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
         ]);
 
-        event(new Registered($user));
-
-        Auth::login($user);
-
-        return redirect(route('dashboard', absolute: false));
+        // ریدایرکت به صفحه Welcome با یک پیام فلش (Flash Message)
+        return redirect()->route('welcome')->with('toast', [
+            'message' => 'اکانت شما با موفقیت ساخته شد. جهت فعال‌سازی به پشتیبانی پیام دهید.',
+            'type' => 'info'
+        ]);
     }
 }

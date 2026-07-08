@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { ref } from "vue"; // اضافه شدن ref
 import { Head, Link, useForm } from "@inertiajs/vue3";
+import Toast from "@/Components/ui/Toast.vue"; // ایمپورت کامپوننت Toast
 
 const form = useForm({
     name: "",
@@ -8,9 +10,24 @@ const form = useForm({
     password_confirmation: "",
 });
 
+// متغیرهای توست
+const showToast = ref(false);
+const toastMessage = ref("");
+
 const submit = () => {
     form.post(route("register"), {
         onFinish: () => form.reset("password", "password_confirmation"),
+        onError: (errors) => {
+            // شکار ارور و نمایش توست
+            if (errors.phone && errors.phone.includes("پشتیبانی")) {
+                toastMessage.value = errors.phone;
+                showToast.value = true;
+                form.clearErrors("phone");
+                setTimeout(() => {
+                    showToast.value = false;
+                }, 5000);
+            }
+        },
     });
 };
 </script>
@@ -19,9 +36,11 @@ const submit = () => {
     <Head title="ثبت‌نام پرزنتر" />
 
     <div
-        class="relative min-h-screen flex items-center justify-center bg-slate-50 overflow-hidden"
+        class="relative min-h-screen flex flex-col items-center justify-center bg-slate-50 overflow-hidden"
         dir="rtl"
     >
+        <Toast :show="showToast" :message="toastMessage" />
+
         <div
             class="absolute top-0 right-0 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"
         ></div>
@@ -204,6 +223,17 @@ const submit = () => {
                     </p>
                 </div>
             </form>
+        </div>
+        <div
+            class="bg-white mt-6 text-center text-xs font-semibold text-slate-500 bg-slate-100/50 p-3 rounded-xl border border-slate-200"
+        >
+            جهت ارتباط با پشتیبانی به این شماره تماس حاصل کنید:<br />
+            <a
+                href="tel:09379674614"
+                class="text-indigo-600 font-black text-sm mt-1 inline-block"
+                dir="ltr"
+                >0937 967 4614</a
+            >
         </div>
     </div>
 </template>

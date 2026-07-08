@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { Head, Link, useForm } from "@inertiajs/vue3";
+import Toast from "@/Components/ui/Toast.vue";
 
 defineProps<{
     canResetPassword?: boolean;
@@ -43,42 +44,10 @@ const submit = () => {
     <Head title="ورود به سیستم" />
 
     <div
-        class="relative min-h-screen flex items-center justify-center bg-slate-50 overflow-hidden"
+        class="relative min-h-screen flex flex-col items-center justify-center bg-slate-50 overflow-hidden"
         dir="rtl"
     >
-        <Transition
-            enter-active-class="transition ease-out duration-300 transform"
-            enter-from-class="opacity-0 -translate-y-10 scale-95"
-            enter-to-class="opacity-100 translate-y-0 scale-100"
-            leave-active-class="transition ease-in duration-200 transform"
-            leave-from-class="opacity-100 translate-y-0 scale-100"
-            leave-to-class="opacity-0 -translate-y-10 scale-95"
-        >
-            <div
-                v-if="showToast"
-                class="fixed top-6 inset-x-0 flex justify-center z-50 px-4"
-            >
-                <div
-                    class="bg-rose-600/90 backdrop-blur-xl border border-rose-400/50 text-white px-5 py-3 rounded-2xl shadow-[0_8px_30px_rgb(225,29,72,0.3)] flex items-center gap-3"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-6 w-6 shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                        />
-                    </svg>
-                    <span class="text-sm font-bold">{{ toastMessage }}</span>
-                </div>
-            </div>
-        </Transition>
+        <Toast :show="showToast" :message="toastMessage" />
 
         <div
             class="absolute top-0 right-0 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"
@@ -239,6 +208,17 @@ const submit = () => {
                     </p>
                 </div>
             </form>
+        </div>
+        <div
+            class="bg-white mt-6 text-center text-xs font-semibold text-slate-500 bg-slate-100/50 p-3 rounded-xl border border-slate-200"
+        >
+            جهت ارتباط با پشتیبانی به این شماره تماس حاصل کنید:<br />
+            <a
+                href="tel:09379674614"
+                class="text-indigo-600 font-black text-sm mt-1 inline-block"
+                dir="ltr"
+                >0937 967 4614</a
+            >
         </div>
     </div>
 </template>
