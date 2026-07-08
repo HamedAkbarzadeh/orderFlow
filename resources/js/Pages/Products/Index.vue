@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import MainLayout from "@/Layouts/MainLayout.vue";
 import type { Product, ProductAttribute } from "./Products.types";
+import CurrencyInput from "@/Components/ui/CurrencyInput.vue";
 
 const props = defineProps<{
     products: Product[];
@@ -109,13 +110,11 @@ const submitProduct = () => {
                         required
                         class="w-2/3 bg-white/50 border-slate-200 rounded-xl text-sm"
                     />
-                    <input
-                        type="number"
+                    <CurrencyInput
                         v-model="form.price"
-                        placeholder="قیمت پایه (تومان)"
+                        placeholder="قیمت پایه"
                         required
-                        min="0"
-                        class="w-1/3 bg-white/50 border-slate-200 rounded-xl text-sm"
+                        class="bg-white/50 border-slate-200 rounded-xl text-sm"
                     />
                 </div>
 
@@ -164,13 +163,11 @@ const submitProduct = () => {
                                     placeholder="واحد (مثلا گیگ)"
                                     class="w-1/2 bg-white border-slate-200 rounded-xl text-xs py-1.5"
                                 />
-                                <input
-                                    type="number"
+                                <CurrencyInput
                                     v-model="attr.price_increase"
                                     placeholder="افزایش قیمت"
                                     required
-                                    min="0"
-                                    class="w-1/2 bg-white border-slate-200 rounded-xl text-xs py-1.5"
+                                    class="bg-white border-slate-200 rounded-xl text-xs py-1.5"
                                 />
                             </div>
                         </div>
@@ -222,7 +219,7 @@ const submitProduct = () => {
                     <span
                         class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg"
                     >
-                        پایه: {{ product.price.toLocaleString() }}
+                        پایه: {{ product.price.toLocaleString() }} ریال
                     </span>
                 </div>
 
@@ -240,7 +237,10 @@ const submitProduct = () => {
                             {{ attr.unit }}</span
                         >
                         <span class="font-semibold text-emerald-600"
-                            >+{{ attr.price_increase.toLocaleString() }}</span
+                            >+{{
+                                attr.price_increase.toLocaleString()
+                            }}
+                            ریال</span
                         >
                     </div>
                 </div>

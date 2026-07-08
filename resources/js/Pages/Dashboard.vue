@@ -37,13 +37,18 @@ const props = defineProps<{
     statistics: Statistics; // دریافت دیتا از کنترلر
 }>();
 
-// تابع تغییر وضعیت دوطرفه (از باز به تحویل داده شده و برعکس)
-const toggleStatus = (orderId: number, currentStatus: string) => {
-    const newStatus = currentStatus === "pending" ? "delivered" : "pending";
-    const message =
-        currentStatus === "pending"
-            ? "آیا مطمئن هستید که این سفارش تحویل داده شده است؟"
-            : 'آیا می‌خواهید این سفارش را مجدداً به حالت "باز" (در انتظار) برگردانید؟';
+// تابع به‌روزرسانی وضعیت سفارش
+const updateOrderStatus = (orderId: number, newStatus: string) => {
+    let message = "";
+
+    if (newStatus === "delivered") {
+        message = "آیا مطمئن هستید که این سفارش تحویل داده شده است؟";
+    } else if (newStatus === "cancelled") {
+        message = "آیا از لغو کردن این سفارش اطمینان دارید؟";
+    } else {
+        message =
+            'آیا می‌خواهید این سفارش را مجدداً به حالت "باز" (در انتظار) برگردانید؟';
+    }
 
     if (confirm(message)) {
         router.patch(
@@ -240,7 +245,7 @@ const formatDate = (dateString: string) => {
                         <span class="text-2xl font-black tracking-tight">{{
                             statistics.total_revenue.toLocaleString()
                         }}</span>
-                        <span class="text-xs text-indigo-200">تومان</span>
+                        <span class="text-xs text-indigo-200">ریال</span>
                     </div>
                 </div>
                 <div class="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
@@ -263,22 +268,22 @@ const formatDate = (dateString: string) => {
         </div>
 
         <div
-            class="flex bg-white/40 backdrop-blur-md p-1.5 rounded-2xl mb-6 border border-white/60 shadow-sm relative z-10"
+            class="flex bg-white/40 backdrop-blur-md p-1.5 rounded-2xl mb-6 border border-white/60 shadow-sm relative z-10 overflow-x-auto"
         >
             <button
                 @click="changeFilter('all')"
-                class="flex-1 py-2 text-[11px] sm:text-xs font-bold rounded-xl transition-all duration-300"
+                class="min-w-max flex-1 py-2 px-2 text-[11px] sm:text-xs font-bold rounded-xl transition-all duration-300"
                 :class="
                     currentFilter === 'all'
                         ? 'bg-white text-indigo-600 shadow-sm'
                         : 'text-slate-500 hover:text-slate-700'
                 "
             >
-                همه سفارشات
+                همه
             </button>
             <button
                 @click="changeFilter('pending')"
-                class="flex-1 py-2 text-[11px] sm:text-xs font-bold rounded-xl transition-all duration-300"
+                class="min-w-max flex-1 py-2 px-2 text-[11px] sm:text-xs font-bold rounded-xl transition-all duration-300"
                 :class="
                     currentFilter === 'pending'
                         ? 'bg-white text-amber-600 shadow-sm'
@@ -289,14 +294,25 @@ const formatDate = (dateString: string) => {
             </button>
             <button
                 @click="changeFilter('delivered')"
-                class="flex-1 py-2 text-[11px] sm:text-xs font-bold rounded-xl transition-all duration-300"
+                class="min-w-max flex-1 py-2 px-2 text-[11px] sm:text-xs font-bold rounded-xl transition-all duration-300"
                 :class="
                     currentFilter === 'delivered'
                         ? 'bg-white text-emerald-600 shadow-sm'
                         : 'text-slate-500 hover:text-slate-700'
                 "
             >
-                تحویل داده شده
+                تحویل شده
+            </button>
+            <button
+                @click="changeFilter('cancelled')"
+                class="min-w-max flex-1 py-2 px-2 text-[11px] sm:text-xs font-bold rounded-xl transition-all duration-300"
+                :class="
+                    currentFilter === 'cancelled'
+                        ? 'bg-white text-rose-600 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700'
+                "
+            >
+                لغو شده
             </button>
         </div>
 
@@ -370,7 +386,7 @@ const formatDate = (dateString: string) => {
                                         : 'text-slate-700'
                                 "
                             >
-                                {{ order.total_price.toLocaleString() }} تومان
+                                {{ order.total_price.toLocaleString() }} ریال
                             </span>
                         </div>
 
@@ -383,7 +399,7 @@ const formatDate = (dateString: string) => {
                                 >{{
                                     order.discount.toLocaleString()
                                 }}
-                                تومان</span
+                                ریال</span
                             >
                         </div>
 
@@ -397,7 +413,7 @@ const formatDate = (dateString: string) => {
                                 >{{
                                     order.final_price.toLocaleString()
                                 }}
-                                تومان</span
+                                ریال</span
                             >
                         </div>
                     </div>
@@ -435,62 +451,41 @@ const formatDate = (dateString: string) => {
                 </div>
 
                 <div class="flex items-center justify-between mt-2 pl-1 pr-3">
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                        <span
-                            class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded-md"
-                        >
-                            پرداخت: {{ order.payment_type }}
-                        </span>
-                        <span
-                            class="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md"
-                        >
-                            تحویل: {{ formatDate(order.delivery_date) }}
-                        </span>
+                    <span
+                        class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded-md"
+                    >
+                        پرداخت: {{ order.payment_type }}
+                    </span>
+
+                    <div class="flex gap-2">
+                        <template v-if="order.status === 'pending'">
+                            <button
+                                @click="
+                                    updateOrderStatus(order.id, 'cancelled')
+                                "
+                                class="flex items-center text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-1.5 rounded-xl hover:bg-rose-100 transition-colors"
+                            >
+                                ✕ لغو
+                            </button>
+                            <button
+                                @click="
+                                    updateOrderStatus(order.id, 'delivered')
+                                "
+                                class="flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl hover:bg-emerald-100 transition-colors"
+                            >
+                                ✓ تحویل دادم
+                            </button>
+                        </template>
+
+                        <template v-else>
+                            <button
+                                @click="updateOrderStatus(order.id, 'pending')"
+                                class="flex items-center text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-xl hover:bg-amber-100 transition-colors"
+                            >
+                                ↻ برگشت به باز
+                            </button>
+                        </template>
                     </div>
-
-                    <button
-                        v-if="order.status === 'pending'"
-                        @click="toggleStatus(order.id, order.status)"
-                        class="flex items-center text-sm font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl hover:bg-emerald-100 transition-colors"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="2.5"
-                            stroke="currentColor"
-                            class="w-4 h-4 ml-1"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M4.5 12.75l6 6 9-13.5"
-                            />
-                        </svg>
-                        تحویل دادم
-                    </button>
-
-                    <button
-                        v-else
-                        @click="toggleStatus(order.id, order.status)"
-                        class="flex items-center text-sm font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-xl hover:bg-amber-100 transition-colors"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="2.5"
-                            stroke="currentColor"
-                            class="w-4 h-4 ml-1"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"
-                            />
-                        </svg>
-                        برگشت به باز
-                    </button>
                 </div>
             </div>
         </div>

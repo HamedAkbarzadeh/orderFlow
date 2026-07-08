@@ -89,47 +89,44 @@ class OrderController extends Controller
     // ذخیره سفارش جدید در دیتابیس
     public function store(Request $request)
     {
-        // ۱. اعتبارسنجی اطلاعات ارسالی از سمت کاربر
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'delivery_date' => 'required|date',
             'payment_type' => 'required|string',
             'discount' => 'nullable|numeric|min:0',
-            'items' => 'required|array|min:1', // حداقل یک محصول باید انتخاب شود
+            'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.product_attribute_id' => 'nullable|exists:product_attributes,id',
             'items.*.quantity' => 'required|numeric|min:1',
         ]);
 
-        // ۲. ایجاد فاکتور اصلی
         $order = Order::create([
             'customer_id' => $validated['customer_id'],
-            'user_id' => auth()->id(), // شناسه پرزنتری که لاگین کرده است
+            'user_id' => auth()->id(),
             'delivery_date' => $validated['delivery_date'],
             'payment_type' => $validated['payment_type'],
             'discount' => $validated['discount'] ?? 0,
             'status' => 'pending',
         ]);
 
-        // ۳. پردازش اقلام سفارش و ساخت متن خلاصه
         $customer = Customer::find($validated['customer_id']);
         $summaryText = "سفارش برای: {$customer->store_name} (آقای/خانم {$customer->contact_name})\n";
         $summaryText .= "آدرس: {$customer->address}\n";
-        $summaryText .= "تاریخ تحویل: {$this->toJalaliDate($validated['delivery_date'], true)}\n\nاقلام:\n";
+        $summaryText .= "تاریخ تحویل: {$validated['delivery_date']}\n\nاقلام:\n";
+
+        $totalPrice = 0; // متغیر برای محاسبه قیمت کل
 
         foreach ($validated['items'] as $item) {
             $product = Product::find($item['product_id']);
-            $unitPrice = $product->price; // قیمت پایه محصول
+            $unitPrice = $product->price;
 
             $attributeName = '';
-            // اگر محصول ویژگی خاصی (مثل رم یا وزن) داشت، قیمت آن به قیمت پایه اضافه می‌شود
             if (!empty($item['product_attribute_id'])) {
                 $attribute = \App\Models\ProductAttribute::find($item['product_attribute_id']);
                 $unitPrice += $attribute->price_increase;
                 $attributeName = " ({$attribute->key}: {$attribute->value} {$attribute->unit})";
             }
 
-            // ثبت آیتم در دیتابیس
             $order->items()->create([
                 'product_id' => $product->id,
                 'product_attribute_id' => $item['product_attribute_id'] ?? null,
@@ -137,22 +134,33 @@ class OrderController extends Controller
                 'unit_price' => $unitPrice,
             ]);
 
-            // اضافه کردن به متن خلاصه
-            $summaryText .= "- {$item['quantity']} عدد/واحد {$product->name} {$attributeName}\n";
+            $totalPrice += ($unitPrice * $item['quantity']);
+
+            // اضافه کردن قیمت هر قلم کالا با جداکننده
+            $formattedUnitPrice = number_format($unitPrice);
+            $summaryText .= "- {$item['quantity']} عدد/واحد {$product->name} {$attributeName} (فی: {$formattedUnitPrice} ریال)\n";
         }
 
-        // ۴. بروزرسانی فاکتور با متن خلاصه تولید شده
+        $finalPrice = max(0, $totalPrice - $order->discount);
+
+        // اضافه کردن بخش مالی به انتهای متن خلاصه
+        $summaryText .= "\n-------------------\n";
+        $summaryText .= "مبلغ کل: " . number_format($totalPrice) . " ریال\n";
+        if ($order->discount > 0) {
+            $summaryText .= "تخفیف: " . number_format($order->discount) . " ریال\n";
+        }
+        $summaryText .= "مبلغ قابل پرداخت: " . number_format($finalPrice) . " ریال\n";
+
         $order->update(['summary_text' => $summaryText]);
 
-        // ۵. ریدایرکت کاربر به داشبورد
         return redirect()->route('dashboard')->with('success', 'سفارش با موفقیت ثبت شد.');
     }
-
-    // تغییر وضعیت سفارش (مثلاً تیک زدن تحویل داده شد)
-    public function updateStatus(Request $request, Order $order)
+    // تغییر وضعیت سفارش
+    public function updateStatus(Request $request, \App\Models\Order $order)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,delivered'
+            // اضافه شدن وضعیت cancelled به لیست مجاز
+            'status' => 'required|in:pending,delivered,cancelled'
         ]);
 
         // فقط پرزنتر مربوطه می‌تواند وضعیت سفارش خودش را تغییر دهد

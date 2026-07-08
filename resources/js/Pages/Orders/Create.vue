@@ -5,6 +5,7 @@ import MainLayout from "@/Layouts/MainLayout.vue";
 import JalaliDatePicker from "@/Components/JalaliDatePicker.vue";
 import { PAYMENT_TYPES } from "./Orders.constants";
 import type { Customer, Product, ProductAttribute } from "./Orders.types";
+import CurrencyInput from "@/Components/ui/CurrencyInput.vue";
 
 // دریافت دیتاهای پاس داده شده از کنترلر
 const props = defineProps<{
@@ -301,13 +302,11 @@ const submitOrder = () => {
                 <div>
                     <label
                         class="block text-xs font-semibold text-slate-600 mb-1"
-                        >تخفیف دستی پرزنتر (تومان)</label
+                        >تخفیف دستی پرزنتر</label
                     >
-                    <input
-                        type="number"
+                    <CurrencyInput
                         v-model="form.discount"
-                        min="0"
-                        class="w-full bg-white/50 border-slate-200 rounded-xl text-sm"
+                        class="bg-white/50 border-slate-200 rounded-xl text-sm focus:ring-indigo-500 focus:border-indigo-500"
                     />
                 </div>
 
@@ -316,7 +315,7 @@ const submitOrder = () => {
                 >
                     <span class="font-bold text-slate-600">مبلغ نهایی:</span>
                     <span class="font-black text-lg text-indigo-700"
-                        >{{ cartTotal.toLocaleString() }} تومان</span
+                        >{{ cartTotal.toLocaleString() }} ریال</span
                     >
                 </div>
             </div>
