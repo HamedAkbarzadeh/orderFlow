@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import MainLayout from "@/Layouts/MainLayout.vue";
+import JalaliDatePicker from "@/Components/JalaliDatePicker.vue";
 import { PAYMENT_TYPES } from "./Orders.constants";
 import type { Customer, Product, ProductAttribute } from "./Orders.types";
 
@@ -274,12 +275,7 @@ const submitOrder = () => {
                         class="block text-xs font-semibold text-slate-600 mb-1"
                         >تاریخ تحویل</label
                     >
-                    <input
-                        type="date"
-                        v-model="form.delivery_date"
-                        required
-                        class="w-full bg-white/50 border-slate-200 rounded-xl text-sm"
-                    />
+                    <JalaliDatePicker v-model="form.delivery_date" />
                 </div>
 
                 <div>

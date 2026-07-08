@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Customer;
 use App\Models\Product;
 use Inertia\Inertia;
+use Morilog\Jalali\CalendarUtils;
 
 class OrderController extends Controller
 {
@@ -15,30 +16,54 @@ class OrderController extends Controller
     {
         $statusFilter = $request->query('status', 'pending');
 
-        // اضافه کردن items به with برای محاسبه قیمت
-        $query = Order::with(['customer', 'items']);
+        // --- بخش اول: محاسبه آماری داشبورد ---
+        // برای بهینه‌سازی، همه سفارشات و آیتم‌هایشان را یک‌بار می‌گیریم تا آمار را از روی آن‌ها حساب کنیم
+        $allOrders = \App\Models\Order::with('items')->get();
+
+        $totalOrdersCount = $allOrders->count();
+        $pendingOrdersCount = $allOrders->where('status', 'pending')->count();
+        $deliveredOrdersCount = $allOrders->where('status', 'delivered')->count(); // تعداد کل فروش‌ها
+
+        // محاسبه درآمد کل (مجموع پرداختی‌های فاکتورهای تحویل داده شده پس از کسر تخفیف)
+        $totalRevenue = $allOrders->where('status', 'delivered')->sum(function ($order) {
+            $itemsTotal = $order->items->sum(function ($item) {
+                return $item->unit_price * $item->quantity;
+            });
+            return max(0, $itemsTotal - $order->discount);
+        });
+
+        $totalCustomersCount = \App\Models\Customer::count();
+
+
+        // بسته‌بندی آمار برای ارسال به فرانت‌اند
+        $statistics = [
+            'total_sales_count' => $deliveredOrdersCount,
+            'total_orders_count' => $totalOrdersCount,
+            'pending_orders_count' => $pendingOrdersCount,
+            'total_revenue' => $totalRevenue,
+            'total_customers_count' => $totalCustomersCount, // اضافه شد
+        ];
+
+        // --- بخش دوم: کوئری لیست فیلتر شده سفارشات برای نمایش در کارت‌ها ---
+        $query = \App\Models\Order::with(['customer', 'items']);
 
         if ($statusFilter !== 'all') {
             $query->where('status', $statusFilter);
         }
 
-        // دریافت سفارشات و محاسبه قیمت‌های قبل و بعد از تخفیف
         $orders = $query->orderBy('delivery_date', 'asc')->get()->map(function ($order) {
-            // محاسبه مجموع قیمت آیتم‌ها (تعداد * قیمت واحد)
             $totalPrice = $order->items->sum(function ($item) {
                 return $item->unit_price * $item->quantity;
             });
-
-            // اضافه کردن مقادیر محاسبه شده به شیء سفارش برای ارسال به فرانت‌اند
             $order->total_price = $totalPrice;
             $order->final_price = max(0, $totalPrice - $order->discount);
-
             return $order;
         });
 
-        return Inertia::render('Dashboard', [
+        return \Inertia\Inertia::render('Dashboard', [
             'orders' => $orders,
-            'currentFilter' => $statusFilter
+            'currentFilter' => $statusFilter,
+            'statistics' => $statistics // ارسال آمار به ویو
         ]);
     }
 
@@ -90,7 +115,7 @@ class OrderController extends Controller
         $customer = Customer::find($validated['customer_id']);
         $summaryText = "سفارش برای: {$customer->store_name} (آقای/خانم {$customer->contact_name})\n";
         $summaryText .= "آدرس: {$customer->address}\n";
-        $summaryText .= "تاریخ تحویل: {$validated['delivery_date']}\n\nاقلام:\n";
+        $summaryText .= "تاریخ تحویل: {$this->toJalaliDate($validated['delivery_date'], true)}\n\nاقلام:\n";
 
         foreach ($validated['items'] as $item) {
             $product = Product::find($item['product_id']);
@@ -136,5 +161,44 @@ class OrderController extends Controller
         }
 
         return back()->with('success', 'وضعیت فاکتور به‌روزرسانی شد.');
+    }
+
+    /**
+     * تبدیل تاریخ میلادی (فرمت Y-m-d) به رشته تاریخ شمسی
+     * برای استفاده در متن خلاصه سفارش که برای مشتری ارسال/کپی می‌شود.
+     *
+     * @param string $gregorianDate تاریخ میلادی، مثلاً 2026-07-08
+     * @param bool $long اگر true باشد خروجی با نام ماه است (مثلاً «۱۷ تیر ۱۴۰۵»)، در غیر این صورت عددی (۱۴۰۵/۰۴/۱۷)
+     */
+    private function toJalaliDate(string $gregorianDate, bool $long = false): string
+    {
+        $jalaliMonths = [
+            1 => 'فروردین',
+            2 => 'اردیبهشت',
+            3 => 'خرداد',
+            4 => 'تیر',
+            5 => 'مرداد',
+            6 => 'شهریور',
+            7 => 'مهر',
+            8 => 'آبان',
+            9 => 'آذر',
+            10 => 'دی',
+            11 => 'بهمن',
+            12 => 'اسفند',
+        ];
+
+        [$year, $month, $day] = explode('-', $gregorianDate);
+
+        [$jYear, $jMonth, $jDay] = CalendarUtils::toJalali(
+            (int) $year,
+            (int) $month,
+            (int) $day
+        );
+
+        if ($long) {
+            return "{$jDay} {$jalaliMonths[$jMonth]} {$jYear}";
+        }
+
+        return sprintf('%04d/%02d/%02d', $jYear, $jMonth, $jDay);
     }
 }

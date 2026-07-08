@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import MainLayout from "@/Layouts/MainLayout.vue";
 import { Head, Link, router } from "@inertiajs/vue3";
+import { toJalaliDisplay } from "@/utils/jalali";
 
 // تایپ‌های دیتای دریافتی
 interface Customer {
@@ -22,9 +23,18 @@ interface Order {
     customer: Customer;
 }
 
+interface Statistics {
+    total_sales_count: number;
+    total_orders_count: number;
+    pending_orders_count: number;
+    total_revenue: number;
+    total_customers_count: number; // اضافه شد
+}
+
 const props = defineProps<{
     orders: Order[];
     currentFilter: string;
+    statistics: Statistics; // دریافت دیتا از کنترلر
 }>();
 
 // تابع تغییر وضعیت دوطرفه (از باز به تحویل داده شده و برعکس)
@@ -77,7 +87,7 @@ const changeFilter = (status: string) => {
 };
 
 const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("fa-IR");
+    return toJalaliDisplay(dateString);
 };
 </script>
 
@@ -92,6 +102,164 @@ const formatDate = (dateString: string) => {
             <p class="text-slate-500 text-sm mt-1">
                 لیست سفارشات باز و زمان‌بندی تحویل شما
             </p>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-6 relative z-10">
+            <div
+                class="bg-blue-500/10 backdrop-blur-md border border-blue-500/20 p-3.5 rounded-2xl shadow-sm flex flex-col justify-center"
+            >
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="bg-blue-500/20 p-1.5 rounded-lg text-blue-600">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="2.5"
+                            stroke="currentColor"
+                            class="w-4 h-4"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+                            />
+                        </svg>
+                    </div>
+                    <span class="text-xs font-bold text-slate-600"
+                        >مشتریان</span
+                    >
+                </div>
+                <span class="text-xl font-black text-blue-600 mr-1">{{
+                    statistics.total_customers_count
+                }}</span>
+            </div>
+            <div
+                class="bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 p-3.5 rounded-2xl shadow-sm flex flex-col justify-center"
+            >
+                <div class="flex items-center gap-2 mb-1">
+                    <div
+                        class="bg-emerald-500/20 p-1.5 rounded-lg text-emerald-600"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="2.5"
+                            stroke="currentColor"
+                            class="w-4 h-4"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M4.5 12.75l6 6 9-13.5"
+                            />
+                        </svg>
+                    </div>
+                    <span class="text-xs font-bold text-slate-600"
+                        >فروش موفق</span
+                    >
+                </div>
+                <span class="text-xl font-black text-emerald-600 mr-1">{{
+                    statistics.total_sales_count
+                }}</span>
+            </div>
+
+            <div
+                class="bg-amber-500/10 backdrop-blur-md border border-amber-500/20 p-3.5 rounded-2xl shadow-sm flex flex-col justify-center"
+            >
+                <div class="flex items-center gap-2 mb-1">
+                    <div
+                        class="bg-amber-500/20 p-1.5 rounded-lg text-amber-600"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="2.5"
+                            stroke="currentColor"
+                            class="w-4 h-4"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                        </svg>
+                    </div>
+                    <span class="text-xs font-bold text-slate-600"
+                        >سفارشات باز</span
+                    >
+                </div>
+                <span class="text-xl font-black text-amber-600 mr-1">{{
+                    statistics.pending_orders_count
+                }}</span>
+            </div>
+
+            <div
+                class="bg-indigo-500/10 backdrop-blur-md border border-indigo-500/20 p-3.5 rounded-2xl shadow-sm flex flex-col justify-center"
+            >
+                <div class="flex items-center gap-2 mb-1">
+                    <div
+                        class="bg-indigo-500/20 p-1.5 rounded-lg text-indigo-600"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="2.5"
+                            stroke="currentColor"
+                            class="w-4 h-4"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M9 12h3.75M9 15h3.75M9 15.75h3.75M18 9.75v-.75a2.25 2.25 0 00-2.25-2.25h-7.5a2.25 2.25 0 00-2.25 2.25v.75m12 0v1.5c0 .621-.504 1.125-1.125 1.125H18m0-2.625h1.5a.75.75 0 01.75.75v10.5a.75.75 0 01-.75.75h-1.5m-12-12h-1.5a.75.75 0 00-.75.75v10.5c0 .414.336.75.75.75h1.5"
+                            />
+                        </svg>
+                    </div>
+                    <span class="text-xs font-bold text-slate-600"
+                        >کل سفارشات</span
+                    >
+                </div>
+                <span class="text-xl font-black text-indigo-600 mr-1">{{
+                    statistics.total_orders_count
+                }}</span>
+            </div>
+
+            <div
+                class="col-span-2 sm:col-span-1 bg-gradient-to-br from-indigo-600 to-violet-700 p-4 rounded-2xl shadow-lg shadow-indigo-200 text-white flex justify-between items-center relative overflow-hidden"
+            >
+                <div
+                    class="absolute -right-4 -top-6 w-24 h-24 bg-white/10 rounded-full blur-xl"
+                ></div>
+
+                <div>
+                    <span class="text-xs font-medium text-indigo-100 mb-1 block"
+                        >مجموع درآمد (فروش‌های موفق)</span
+                    >
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-black tracking-tight">{{
+                            statistics.total_revenue.toLocaleString()
+                        }}</span>
+                        <span class="text-xs text-indigo-200">تومان</span>
+                    </div>
+                </div>
+                <div class="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="2"
+                        stroke="currentColor"
+                        class="w-6 h-6"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                    </svg>
+                </div>
+            </div>
         </div>
 
         <div
@@ -267,11 +435,18 @@ const formatDate = (dateString: string) => {
                 </div>
 
                 <div class="flex items-center justify-between mt-2 pl-1 pr-3">
-                    <span
-                        class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded-md"
-                    >
-                        پرداخت: {{ order.payment_type }}
-                    </span>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <span
+                            class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded-md"
+                        >
+                            پرداخت: {{ order.payment_type }}
+                        </span>
+                        <span
+                            class="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md"
+                        >
+                            تحویل: {{ formatDate(order.delivery_date) }}
+                        </span>
+                    </div>
 
                     <button
                         v-if="order.status === 'pending'"
