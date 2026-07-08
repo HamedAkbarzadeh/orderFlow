@@ -85,21 +85,10 @@ class OrderController extends Controller
         ]);
     }
 
-
     // ذخیره سفارش جدید در دیتابیس
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'delivery_date' => 'required|date',
-            'payment_type' => 'required|string',
-            'installment_date' => 'nullable|date|required_if:payment_type,قسطی',
-            'discount' => 'nullable|numeric|min:0',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.product_attribute_id' => 'nullable|exists:product_attributes,id',
-            'items.*.quantity' => 'required|numeric|min:1',
-        ]);
+        $validated = $this->validateOrder($request);
 
         $order = Order::create([
             'customer_id' => $validated['customer_id'],
@@ -111,7 +100,108 @@ class OrderController extends Controller
             'status' => 'pending',
         ]);
 
+        $this->syncOrderItemsAndSummary($order, $validated);
+
+        return redirect()->route('dashboard')->with('success', 'سفارش با موفقیت ثبت شد.');
+    }
+
+    // نمایش فرم ویرایش یک سفارش
+    public function edit(Order $order)
+    {
+        abort_if($order->user_id !== auth()->id(), 403);
+
+        $order->load('items');
+
+        $customers = Customer::orderBy('store_name', 'asc')->get();
+        $products = Product::with('attributes')
+            ->where('marketable', 1)
+            ->get();
+
+        return Inertia::render('Orders/Edit', [
+            'order' => $order,
+            'customers' => $customers,
+            'products' => $products,
+        ]);
+    }
+
+    // بروزرسانی یک سفارش موجود
+    public function update(Request $request, Order $order)
+    {
+        // فقط پرزنتری که سفارش رو ثبت کرده می‌تونه ویرایشش کنه
+        abort_if($order->user_id !== auth()->id(), 403);
+
+        $validated = $this->validateOrder($request);
+
+        $order->update([
+            'customer_id' => $validated['customer_id'],
+            'delivery_date' => $validated['delivery_date'],
+            'installment_date' => $validated['installment_date'] ?? null,
+            'payment_type' => $validated['payment_type'],
+            'discount' => $validated['discount'] ?? 0,
+        ]);
+
+        // ساده‌ترین و مطمئن‌ترین راه برای همگام‌سازی سبد خرید: حذف اقلام قبلی و ثبت مجدد از روی داده جدید
+        $order->items()->delete();
+
+        $this->syncOrderItemsAndSummary($order, $validated);
+
+        return redirect()->route('dashboard')->with('success', 'سفارش با موفقیت ویرایش شد.');
+    }
+
+    // حذف یک سفارش
+    public function destroy(Order $order)
+    {
+        // فقط پرزنتری که سفارش رو ثبت کرده می‌تونه حذفش کنه
+        abort_if($order->user_id !== auth()->id(), 403);
+
+        $order->items()->delete();
+        $order->delete();
+
+        return back()->with('success', 'سفارش با موفقیت حذف شد.');
+    }
+
+    // تغییر وضعیت سفارش
+    public function updateStatus(Request $request, \App\Models\Order $order)
+    {
+        $validated = $request->validate([
+            // اضافه شدن وضعیت cancelled به لیست مجاز
+            'status' => 'required|in:pending,delivered,cancelled'
+        ]);
+
+        // فقط پرزنتر مربوطه می‌تواند وضعیت سفارش خودش را تغییر دهد
+        if ($order->user_id === auth()->id()) {
+            $order->update(['status' => $validated['status']]);
+        }
+
+        return back()->with('success', 'وضعیت فاکتور به‌روزرسانی شد.');
+    }
+
+    /**
+     * ولیدیشن مشترک بین ثبت سفارش جدید و ویرایش سفارش، تا قوانین یک‌بار نوشته بشن.
+     */
+    private function validateOrder(Request $request): array
+    {
+        return $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'delivery_date' => 'required|date',
+            'payment_type' => 'required|string',
+            'installment_date' => 'nullable|date|required_if:payment_type,قسطی',
+            'discount' => 'nullable|numeric|min:0',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_attribute_id' => 'nullable|exists:product_attributes,id',
+            'items.*.quantity' => 'required|numeric|min:1',
+        ]);
+    }
+
+    /**
+     * اقلام سفارش رو از روی دیتای ولیدیت‌شده می‌سازه و متن خلاصه سفارش (summary_text) رو
+     * تولید و ذخیره می‌کنه. هم برای ثبت سفارش جدید استفاده میشه هم برای ویرایش.
+     */
+    private function syncOrderItemsAndSummary(Order $order, array $validated): void
+    {
         $customer = Customer::find($validated['customer_id']);
+
         $summaryText = "سفارش برای: {$customer->store_name} (آقای/خانم {$customer->contact_name})\n";
         $summaryText .= "آدرس: {$customer->address}\n";
         $summaryText .= "تاریخ تحویل: {$this->toJalaliDate($validated['delivery_date'], true)}\n";
@@ -121,7 +211,7 @@ class OrderController extends Controller
         }
         $summaryText .= "\nاقلام:\n";
 
-        $totalPrice = 0; // متغیر برای محاسبه قیمت کل
+        $totalPrice = 0;
 
         foreach ($validated['items'] as $item) {
             $product = Product::find($item['product_id']);
@@ -143,39 +233,21 @@ class OrderController extends Controller
 
             $totalPrice += ($unitPrice * $item['quantity']);
 
-            // اضافه کردن قیمت هر قلم کالا با جداکننده
             $formattedUnitPrice = number_format($unitPrice);
             $summaryText .= "- {$item['quantity']} عدد/واحد {$product->name} {$attributeName} (فی: {$formattedUnitPrice} ریال)\n";
         }
 
-        $finalPrice = max(0, $totalPrice - $order->discount);
+        $discount = $validated['discount'] ?? 0;
+        $finalPrice = max(0, $totalPrice - $discount);
 
-        // اضافه کردن بخش مالی به انتهای متن خلاصه
         $summaryText .= "\n-------------------\n";
         $summaryText .= "مبلغ کل: " . number_format($totalPrice) . " ریال\n";
-        if ($order->discount > 0) {
-            $summaryText .= "تخفیف: " . number_format($order->discount) . " ریال\n";
+        if ($discount > 0) {
+            $summaryText .= "تخفیف: " . number_format($discount) . " ریال\n";
         }
         $summaryText .= "مبلغ قابل پرداخت: " . number_format($finalPrice) . " ریال\n";
 
         $order->update(['summary_text' => $summaryText]);
-
-        return redirect()->route('dashboard')->with('success', 'سفارش با موفقیت ثبت شد.');
-    }
-    // تغییر وضعیت سفارش
-    public function updateStatus(Request $request, \App\Models\Order $order)
-    {
-        $validated = $request->validate([
-            // اضافه شدن وضعیت cancelled به لیست مجاز
-            'status' => 'required|in:pending,delivered,cancelled'
-        ]);
-
-        // فقط پرزنتر مربوطه می‌تواند وضعیت سفارش خودش را تغییر دهد
-        if ($order->user_id === auth()->id()) {
-            $order->update(['status' => $validated['status']]);
-        }
-
-        return back()->with('success', 'وضعیت فاکتور به‌روزرسانی شد.');
     }
 
     /**

@@ -21,3 +21,23 @@ export interface Product {
     price: number;
     attributes: ProductAttribute[];
 }
+
+export interface OrderItem {
+    id: number;
+    product_id: number;
+    product_attribute_id: number | null;
+    quantity: number;
+    unit_price: number;
+}
+
+export interface Order {
+    id: number;
+    customer_id: number;
+    delivery_date: string;
+    installment_date: string | null;
+    payment_type: string;
+    discount: number;
+    status: string;
+    summary_text: string;
+    items: OrderItem[];
+}

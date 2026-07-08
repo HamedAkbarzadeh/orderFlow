@@ -14,6 +14,7 @@ interface Customer {
 interface Order {
     id: number;
     delivery_date: string;
+    installment_date: string | null;
     payment_type: string;
     status: string;
     summary_text: string;
@@ -93,6 +94,21 @@ const changeFilter = (status: string) => {
 
 const formatDate = (dateString: string) => {
     return toJalaliDisplay(dateString);
+};
+
+// حذف کامل یک سفارش (با تایید کاربر)
+const deleteOrder = (orderId: number) => {
+    if (
+        !confirm(
+            "مطمئنی می‌خوای این سفارش رو کامل حذف کنی؟ این عمل قابل بازگشت نیست.",
+        )
+    ) {
+        return;
+    }
+
+    router.delete(route("orders.destroy", orderId), {
+        preserveScroll: true,
+    });
 };
 </script>
 
@@ -451,11 +467,24 @@ const formatDate = (dateString: string) => {
                 </div>
 
                 <div class="flex items-center justify-between mt-2 pl-1 pr-3">
-                    <span
-                        class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded-md"
-                    >
-                        پرداخت: {{ order.payment_type }}
-                    </span>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <span
+                            class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded-md"
+                        >
+                            پرداخت: {{ order.payment_type }}
+                        </span>
+                        <span
+                            class="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md"
+                        >
+                            تحویل: {{ formatDate(order.delivery_date) }}
+                        </span>
+                        <span
+                            v-if="order.installment_date"
+                            class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded-md"
+                        >
+                            قسط: {{ formatDate(order.installment_date) }}
+                        </span>
+                    </div>
 
                     <div class="flex gap-2">
                         <template v-if="order.status === 'pending'">
@@ -486,6 +515,21 @@ const formatDate = (dateString: string) => {
                             </button>
                         </template>
                     </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 mt-2 pl-1 pr-3">
+                    <Link
+                        :href="route('orders.edit', order.id)"
+                        class="flex items-center text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1.5 rounded-xl hover:bg-indigo-100 transition-colors"
+                    >
+                        ✎ ویرایش
+                    </Link>
+                    <button
+                        @click="deleteOrder(order.id)"
+                        class="flex items-center text-[11px] font-bold text-rose-500 bg-rose-50 px-2.5 py-1.5 rounded-xl hover:bg-rose-100 transition-colors"
+                    >
+                        🗑 حذف سفارش
+                    </button>
                 </div>
             </div>
         </div>
