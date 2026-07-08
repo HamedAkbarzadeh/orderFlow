@@ -1,0 +1,102 @@
+<script setup lang="ts">
+import { Link } from "@inertiajs/vue3";
+import { usePage } from "@inertiajs/vue3";
+
+// دریافت آدرس فعلی برای فعال کردن (Active) آیتم‌های منو
+const page = usePage();
+
+// تعریف آیتم‌های منوی پایین
+const bottomNavItems = [
+    {
+        name: "داشبورد",
+        route: "dashboard",
+        // آیکون خانه (SVG)
+        icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />',
+    },
+    {
+        name: "ثبت سفارش",
+        route: "orders.create",
+        // آیکون پلاس / اضافه کردن (SVG)
+        icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />',
+    },
+    {
+        name: "مشتریان",
+        route: "customers.index", // فعلا به داشبورد لینک شده تا بعدا روت مشتریان را بسازیم
+        // آیکون کاربران (SVG)
+        icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />',
+    },
+    {
+        name: "محصولات",
+        route: "products.index",
+        // آیکون باکس (SVG)
+        icon: '<path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />',
+    },
+];
+</script>
+
+<template>
+    <div
+        class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-200 text-slate-800 font-sans pb-20"
+        dir="rtl"
+    >
+        <header
+            class="fixed top-0 inset-x-0 z-40 bg-white/60 backdrop-blur-md border-b border-white/40 shadow-sm"
+        >
+            <div class="flex items-center justify-between px-6 py-4">
+                <h1 class="text-lg font-bold text-slate-700 tracking-tight">
+                    سیستم مدیریت سفارشات
+                </h1>
+
+                <button
+                    class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold"
+                >
+                    {{ $page.props.auth.user.name.charAt(0) }}
+                </button>
+            </div>
+        </header>
+
+        <main class="pt-20 px-4 pb-6 max-w-lg mx-auto">
+            <slot />
+        </main>
+
+        <nav class="fixed bottom-0 inset-x-0 z-50">
+            <div
+                class="absolute inset-0 bg-white/70 backdrop-blur-xl border-t border-white/50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]"
+            ></div>
+
+            <div class="relative flex justify-around items-center h-16 pb-safe">
+                <Link
+                    v-for="item in bottomNavItems"
+                    :key="item.name"
+                    :href="route(item.route)"
+                    class="flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors duration-200"
+                    :class="
+                        route().current(item.route)
+                            ? 'text-indigo-600'
+                            : 'text-slate-400 hover:text-slate-600'
+                    "
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="2"
+                        stroke="currentColor"
+                        class="w-6 h-6"
+                        v-html="item.icon"
+                    ></svg>
+                    <span class="text-[10px] font-semibold">{{
+                        item.name
+                    }}</span>
+                </Link>
+            </div>
+        </nav>
+    </div>
+</template>
+
+<style>
+/* اضافه کردن پشتیبانی از safe-area آیفون در Tailwind */
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+</style>
