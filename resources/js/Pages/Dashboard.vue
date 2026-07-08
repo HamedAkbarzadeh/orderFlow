@@ -231,7 +231,7 @@ const formatDate = (dateString: string) => {
             </div>
 
             <div
-                class="col-span-2 sm:col-span-1 bg-gradient-to-br from-indigo-600 to-violet-700 p-4 rounded-2xl shadow-lg shadow-indigo-200 text-white flex justify-between items-center relative overflow-hidden"
+                class="col-span-2 bg-gradient-to-br from-indigo-600 to-violet-700 p-4 rounded-2xl shadow-lg shadow-indigo-200 text-white flex justify-between items-center relative overflow-hidden"
             >
                 <div
                     class="absolute -right-4 -top-6 w-24 h-24 bg-white/10 rounded-full blur-xl"

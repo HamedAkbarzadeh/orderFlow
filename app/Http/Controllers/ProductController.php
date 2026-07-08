@@ -47,4 +47,43 @@ class ProductController extends Controller
 
         return back()->with('success', 'محصول جدید با موفقیت اضافه شد.');
     }
+
+
+    // ویرایش محصول و ویژگی‌های آن
+    public function update(Request $request, Product $product)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'attributes' => 'nullable|array',
+            'attributes.*.key' => 'required|string',
+            'attributes.*.value' => 'required|string',
+            'attributes.*.unit' => 'nullable|string',
+            'attributes.*.price_increase' => 'required|numeric|min:0',
+        ]);
+
+        // آپدیت اطلاعات پایه محصول
+        $product->update([
+            'name' => $validated['name'],
+            'price' => $validated['price'],
+        ]);
+
+        // پاک کردن ویژگی‌های قبلی و جایگزین کردن با ویژگی‌های جدید
+        $product->attributes()->delete();
+
+        if (!empty($validated['attributes'])) {
+            $product->attributes()->createMany($validated['attributes']);
+        }
+
+        return back()->with('success', 'محصول با موفقیت ویرایش شد.');
+    }
+
+    // حذف کامل محصول
+    public function destroy(Product $product)
+    {
+        // به دلیل وجود on delete cascade در مایگریشن‌ها، ویژگی‌های متصل به این محصول هم خودکار پاک می‌شوند
+        $product->delete();
+
+        return back()->with('success', 'محصول با موفقیت حذف شد.');
+    }
 }
