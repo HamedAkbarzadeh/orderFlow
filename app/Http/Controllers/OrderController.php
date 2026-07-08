@@ -11,16 +11,34 @@ use Inertia\Inertia;
 class OrderController extends Controller
 {
     // نمایش داشبورد و لیست سفارشات باز
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        // سفارشات را بر اساس نزدیک‌ترین تاریخ تحویل مرتب می‌کنیم
-        $orders = Order::with('customer')
-            ->where('status', 'pending')
-            ->orderBy('delivery_date', 'asc')
-            ->get();
+        $statusFilter = $request->query('status', 'pending');
+
+        // اضافه کردن items به with برای محاسبه قیمت
+        $query = Order::with(['customer', 'items']);
+
+        if ($statusFilter !== 'all') {
+            $query->where('status', $statusFilter);
+        }
+
+        // دریافت سفارشات و محاسبه قیمت‌های قبل و بعد از تخفیف
+        $orders = $query->orderBy('delivery_date', 'asc')->get()->map(function ($order) {
+            // محاسبه مجموع قیمت آیتم‌ها (تعداد * قیمت واحد)
+            $totalPrice = $order->items->sum(function ($item) {
+                return $item->unit_price * $item->quantity;
+            });
+
+            // اضافه کردن مقادیر محاسبه شده به شیء سفارش برای ارسال به فرانت‌اند
+            $order->total_price = $totalPrice;
+            $order->final_price = max(0, $totalPrice - $order->discount);
+
+            return $order;
+        });
 
         return Inertia::render('Dashboard', [
-            'orders' => $orders
+            'orders' => $orders,
+            'currentFilter' => $statusFilter
         ]);
     }
 
