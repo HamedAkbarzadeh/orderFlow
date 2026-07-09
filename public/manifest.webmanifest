@@ -1,0 +1,25 @@
+{
+  "name": "مدیریت سفارشات",
+  "short_name": "سفارشات",
+  "description": "سیستم ثبت و مدیریت سفارشات ویزیتوری",
+  "theme_color": "#4f46e5",
+  "background_color": "#f8fafc",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "fa-IR",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

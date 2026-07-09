@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import vue from '@vitejs/plugin-vue';
-import { VitePWA } from 'vite-plugin-pwa'; // این خط اضافه شود
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
     plugins: [
@@ -17,18 +17,19 @@ export default defineConfig({
                 },
             },
         }),
-        // تنظیمات افزونه PWA
+        // تنظیمات افزونه PWA سازگار با لاراول
         VitePWA({
-            outDir: 'public', // خروجی فایل‌ها در پوشه پابلیک لاراول قرار می‌گیرد
+            outDir: 'public', // قرار دادن فایل‌ها در روت پابلیک
             buildBase: '/',
+            injectRegister: false, // جلوگیری از تزریق خودکار (چون در Blade دستی نوشتیم)
             registerType: 'autoUpdate',
             manifest: {
                 name: 'مدیریت سفارشات',
                 short_name: 'سفارشات',
                 description: 'سیستم ثبت و مدیریت سفارشات ویزیتوری',
-                theme_color: '#4f46e5', // رنگ تم هدر اپلیکیشن (رنگ ایندیگو)
+                theme_color: '#4f46e5',
                 background_color: '#f8fafc',
-                display: 'standalone', // حذف نوار مرورگر و اجرای شبیه اپلیکیشن
+                display: 'standalone',
                 dir: 'rtl',
                 lang: 'fa-IR',
                 icons: [
@@ -43,6 +44,15 @@ export default defineConfig({
                         type: 'image/png'
                     }
                 ]
+            },
+            workbox: {
+                navigateFallback: null, // 🔴 بسیار مهم: غیرفعال کردن جستجو برای index.html
+                globIgnores: ['**/index.html'], // 🔴 مهم: نادیده گرفتن index.html در کش
+                cleanupOutdatedCaches: true,
+            },
+            devOptions: {
+                enabled: true, // فعال کردن PWA در زمان اجرای npm run dev
+                type: 'module',
             }
         })
     ],
