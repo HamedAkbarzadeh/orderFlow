@@ -41,7 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/orders/{order}/edit', [OrderController::class, 'edit'])->name('orders.edit');
     Route::put('/orders/{order}', [OrderController::class, 'update'])->name('orders.update');
     Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
-
+    Route::patch('/orders/{order}/toggle-installment', [OrderController::class, 'toggleInstallment'])->name('orders.toggleInstallment');
 
     // ثبت مشتری جدید به صورت ای‌پی‌آی (برای زمانی که در همان صفحه فاکتور مشتری جدید ثبت می‌شود)
     Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');

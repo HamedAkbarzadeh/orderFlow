@@ -22,6 +22,7 @@ interface Order {
     total_price: number; // اضافه شد
     final_price: number; // اضافه شد
     customer: Customer;
+    installment_paid: boolean | number; // این خط اضافه شود
 }
 
 interface Statistics {
@@ -37,6 +38,16 @@ const props = defineProps<{
     currentFilter: string;
     statistics: Statistics; // دریافت دیتا از کنترلر
 }>();
+
+const toggleInstallmentPaid = (orderId: number) => {
+    router.patch(
+        route("orders.toggleInstallment", orderId),
+        {},
+        {
+            preserveScroll: true,
+        },
+    );
+};
 
 // تابع به‌روزرسانی وضعیت سفارش
 const updateOrderStatus = (orderId: number, newStatus: string) => {
@@ -473,6 +484,7 @@ const deleteOrder = (orderId: number) => {
                         >
                             پرداخت: {{ order.payment_type }}
                         </span>
+
                         <span
                             class="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md"
                         >
@@ -484,6 +496,24 @@ const deleteOrder = (orderId: number) => {
                         >
                             قسط: {{ formatDate(order.installment_date) }}
                         </span>
+                        <button
+                            v-if="order.payment_type === 'قسطی'"
+                            @click="toggleInstallmentPaid(order.id)"
+                            class="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all active:scale-95 border"
+                            :class="
+                                order.installment_paid
+                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                    : 'bg-amber-50 text-amber-600 border-amber-200'
+                            "
+                        >
+                            <span
+                                v-if="order.installment_paid"
+                                class="flex items-center gap-0.5"
+                            >
+                                ➔ قسط پرداخت شده ✓
+                            </span>
+                            <span v-else> ➔ تسویه قسط؟ </span>
+                        </button>
                     </div>
 
                     <div class="flex gap-2">

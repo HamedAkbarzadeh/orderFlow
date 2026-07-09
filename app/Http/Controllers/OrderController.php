@@ -176,6 +176,20 @@ class OrderController extends Controller
         return back()->with('success', 'وضعیت فاکتور به‌روزرسانی شد.');
     }
 
+    // تغییر وضعیت پرداخت قسط سفارش
+    public function toggleInstallment(Order $order)
+    {
+        // امنیت چندکاربره: فقط پرزنتر صاحب فاکتور مجاز به تغییر است
+        if ($order->user_id === auth()->id()) {
+            $order->update([
+                'installment_paid' => !$order->installment_paid
+            ]);
+        }
+
+        return back()->with('success', 'وضعیت پرداخت قسط به‌روزرسانی شد.');
+    }
+
+
     /**
      * ولیدیشن مشترک بین ثبت سفارش جدید و ویرایش سفارش، تا قوانین یک‌بار نوشته بشن.
      */
