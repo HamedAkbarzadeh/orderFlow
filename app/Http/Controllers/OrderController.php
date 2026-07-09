@@ -15,10 +15,10 @@ class OrderController extends Controller
     public function index(\Illuminate\Http\Request $request)
     {
         $statusFilter = $request->query('status', 'pending');
-
+        $userId = auth()->id();
         // --- بخش اول: محاسبه آماری داشبورد ---
         // برای بهینه‌سازی، همه سفارشات و آیتم‌هایشان را یک‌بار می‌گیریم تا آمار را از روی آن‌ها حساب کنیم
-        $allOrders = \App\Models\Order::with('items')->get();
+        $allOrders = \App\Models\Order::with('items')->where('user_id', $userId)->get();
 
         $totalOrdersCount = $allOrders->count();
         $pendingOrdersCount = $allOrders->where('status', 'pending')->count();
@@ -32,8 +32,7 @@ class OrderController extends Controller
             return max(0, $itemsTotal - $order->discount);
         });
 
-        $totalCustomersCount = \App\Models\Customer::count();
-
+        $totalCustomersCount = \App\Models\Customer::where('user_id', $userId)->count();
 
         // بسته‌بندی آمار برای ارسال به فرانت‌اند
         $statistics = [
@@ -45,7 +44,7 @@ class OrderController extends Controller
         ];
 
         // --- بخش دوم: کوئری لیست فیلتر شده سفارشات برای نمایش در کارت‌ها ---
-        $query = \App\Models\Order::with(['customer', 'items']);
+        $query = \App\Models\Order::with(['customer', 'items'])->where('user_id', $userId);
 
         if ($statusFilter !== 'all') {
             $query->where('status', $statusFilter);
@@ -71,10 +70,11 @@ class OrderController extends Controller
     public function create()
     {
         // گرفتن لیست تمام مشتریان به ترتیب حروف الفبا
-        $customers = Customer::orderBy('store_name', 'asc')->get();
+        $customers = Customer::where('user_id', auth()->id())->orderBy('store_name', 'asc')->get();
 
         // گرفتن محصولاتی که موجود هستند، به همراه ویژگی‌های (Attributes) آن‌ها
         $products = Product::with('attributes')
+            ->where('user_id', auth()->id())
             ->where('marketable', 1)
             ->get();
 

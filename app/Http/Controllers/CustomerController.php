@@ -12,7 +12,7 @@ class CustomerController extends Controller
     public function index()
     {
         // دریافت مشتریان به ترتیب جدیدترین‌ها
-        $customers = Customer::orderBy('created_at', 'desc')->get();
+        $customers = Customer::where('user_id', auth()->id())->latest()->get();
 
         return Inertia::render('Customers/Index', [
             'customers' => $customers
@@ -28,7 +28,7 @@ class CustomerController extends Controller
             'phone' => 'required|string|max:20',
             'address' => 'required|string',
         ]);
-
+        $validated['user_id'] = auth()->id();
         Customer::create($validated);
 
         return back()->with('success', 'مشتری جدید با موفقیت به لیست اضافه شد.');

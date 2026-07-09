@@ -12,8 +12,10 @@ class ProductController extends Controller
     public function index()
     {
         // گرفتن محصولات به همراه ویژگی‌هایشان
-        $products = Product::with('attributes')->orderBy('created_at', 'desc')->get();
-
+        $products = \App\Models\Product::with('attributes')
+            ->where('user_id', auth()->id())
+            ->latest()
+            ->get();
         return Inertia::render('Products/Index', [
             'products' => $products
         ]);
@@ -35,6 +37,7 @@ class ProductController extends Controller
 
         // ساخت محصول پایه
         $product = Product::create([
+            'user_id' => auth()->id(),
             'name' => $validated['name'],
             'price' => $validated['price'],
             'marketable' => 1,
