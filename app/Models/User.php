@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'phone',
         'password',
+        'activated_at', // 👈 این فیلد حتماً باید اضافه شود
     ];
 
     /**
