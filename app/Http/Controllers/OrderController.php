@@ -217,6 +217,7 @@ class OrderController extends Controller
         $customer = Customer::find($validated['customer_id']);
 
         $summaryText = "سفارش برای: {$customer->store_name} (آقای/خانم {$customer->contact_name})\n";
+        $summaryText .= "تلفن: {$customer->phone}\n";
         $summaryText .= "آدرس: {$customer->address}\n";
         $summaryText .= "تاریخ تحویل: {$this->toJalaliDate($validated['delivery_date'], true)}\n";
         $summaryText .= "نوع پرداخت: {$validated['payment_type']}\n";
